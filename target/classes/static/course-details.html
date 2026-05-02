@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Details | CYVEXA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo-container">
+            <span class="logo-title">CYVEXA</span>
+            <span class="logo-subtitle">Professional Learning</span>
+        </a>
+        <div id="authLinks">
+            <a href="login.html" class="btn btn-outline">Sign In</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="details-container">
+            <!-- Left Column: Content -->
+            <div class="content-column">
+                <div style="margin-bottom: 3rem;">
+                    <h1 id="courseTitle" style="font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; color: var(--text-main);">Loading...</h1>
+                    <p id="courseDesc" style="font-size: 1.25rem; color: var(--text-muted); line-height: 1.6;"></p>
+                </div>
+
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-check-circle" style="color: var(--primary); margin-right: 0.75rem;"></i> What you will learn</h2>
+                    <div id="learningOutcomes" style="font-size: 1.05rem; color: var(--text-muted);"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-graduation-cap" style="color: var(--primary); margin-right: 0.75rem;"></i> Course Outcomes</h2>
+                    <div id="outcomes" style="font-size: 1.05rem; color: var(--text-muted);"></div>
+                </div>
+
+                <div class="section-card">
+                    <h2 class="section-title"><i class="fas fa-list-ul" style="color: var(--primary); margin-right: 0.75rem;"></i> Modules & Lessons</h2>
+                    <div class="module-list" id="moduleList"></div>
+                </div>
+
+                <!-- Bottom content repeat as per request -->
+                <div style="margin-top: 4rem; padding: 3rem; background: var(--primary-light); border-radius: var(--radius); text-align: center;">
+                    <h2 style="font-size: 2rem; margin-bottom: 1rem;">Ready to start your journey?</h2>
+                    <p style="margin-bottom: 2rem; color: var(--text-muted);">Join the community and start learning today.</p>
+                    <button onclick="handleEnroll()" class="btn btn-primary btn-lg">Enroll in this Course</button>
+                </div>
+            </div>
+
+            <!-- Right Column: Sticky Sidebar -->
+            <aside class="sticky-sidebar">
+                <div class="card" style="border-width: 2px; border-color: var(--primary-light);">
+                    <img id="courseThumb" src="" alt="Thumbnail" class="card-img">
+                    <div class="card-content">
+                        <div style="margin-bottom: 1.5rem;">
+                            <span style="font-size: 2rem; font-weight: 800; color: var(--text-main);">Free</span>
+                            <span style="text-decoration: line-through; color: var(--secondary); margin-left: 0.5rem;">₹4,999</span>
+                        </div>
+                        
+                        <button onclick="handleEnroll()" class="btn btn-primary btn-lg" style="width: 100%; margin-bottom: 1.5rem;">
+                            Enroll Now
+                        </button>
+
+                        <div style="font-size: 0.9rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.75rem;">
+                            <span><i class="fas fa-infinity" style="width: 20px;"></i> Full lifetime access</span>
+                            <span><i class="fas fa-mobile-alt" style="width: 20px;"></i> Access on mobile and TV</span>
+                            <span><i class="fas fa-certificate" style="width: 20px;"></i> Certificate of completion</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+        let currentCourse = null;
+
+        async function loadCourseDetails() {
+            if (!courseId) return;
+            try {
+                const response = await fetch(`/api/courses/${courseId}`);
+                currentCourse = await response.json();
+
+                document.getElementById('courseTitle').innerText = currentCourse.title;
+                document.getElementById('courseDesc').innerText = currentCourse.description;
+                document.getElementById('courseThumb').src = currentCourse.thumbnailUri || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80';
+                document.getElementById('learningOutcomes').innerText = currentCourse.whatYouWillLearn || 'Expert led practical training.';
+                document.getElementById('outcomes').innerText = currentCourse.outcomes || 'Career growth and skill certification.';
+
+                const moduleList = document.getElementById('moduleList');
+                if (currentCourse.lessons && currentCourse.lessons.length > 0) {
+                    currentCourse.lessons.forEach((lesson, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'module-item';
+                        div.innerHTML = `
+                            <i class="fas fa-play-circle" style="color: var(--primary); font-size: 1.2rem; margin-right: 1rem;"></i>
+                            <span style="font-weight: 600;">Lesson ${index + 1}: ${lesson.title}</span>
+                        `;
+                        moduleList.appendChild(div);
+                    });
+                } else {
+                    moduleList.innerHTML = '<p>Modules being uploaded...</p>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleEnroll() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) {
+                localStorage.setItem('redirectAfterLogin', window.location.href);
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/enrollments?userId=${user.id}&courseId=${currentCourse.id}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('Enrollment successful! Redirecting to your dashboard...');
+                    window.location.href = 'dashboard.html';
+                } else {
+                    const msg = await response.text();
+                    alert(msg || 'Enrollment failed.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function checkAuth() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('authLinks').innerHTML = `
+                    <span style="margin-right: 1.5rem; font-weight: 600;">Welcome, ${user.fullName.split(' ')[0]}</span>
+                    <a href="${user.role === 'ADMIN' ? 'admin.html' : 'dashboard.html'}" class="btn btn-outline">Dashboard</a>
+                `;
+            }
+        }
+
+        window.onload = () => {
+            loadCourseDetails();
+            checkAuth();
+        };
+    </script>
+</body>
+</html>

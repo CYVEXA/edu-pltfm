@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CYVEXA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo-container">
+            <span class="logo-title">CYVEXA</span>
+            <span class="logo-subtitle">Professional Learning</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <button onclick="logout()" class="btn btn-outline">Sign Out</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; padding: 3rem; background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+            <div>
+                <h1 style="font-size: 2.5rem; font-weight: 800;" id="welcomeMsg">Welcome back!</h1>
+                <p style="color: var(--secondary); font-size: 1.1rem; margin-top: 0.5rem;">Pick up where you left off and continue your growth.</p>
+            </div>
+            <a href="index.html" class="btn btn-primary btn-lg"><i class="fas fa-plus"></i> Explore More</a>
+        </div>
+
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 2rem;">My Enrolled Courses</h2>
+        
+        <div class="grid" id="enrolledGrid">
+            <!-- Enrolled courses -->
+        </div>
+
+        <div id="emptyState" style="display: none; text-align: center; padding: 6rem 2rem; background: white; border-radius: var(--radius-lg); margin-top: 2rem;">
+            <div style="font-size: 5rem; color: var(--primary-light); margin-bottom: 2rem;"><i class="fas fa-book-reader"></i></div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 1rem;">No active enrollments</h2>
+            <p style="color: var(--secondary); margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">You haven't started any courses yet. Explore our catalog and start your learning journey today.</p>
+            <a href="index.html" class="btn btn-primary btn-lg">Browse Courses</a>
+        </div>
+    </main>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'login.html';
+        else document.getElementById('welcomeMsg').innerText = `Welcome back, ${user.fullName.split(' ')[0]}!`;
+
+        async function loadEnrolled() {
+            try {
+                const res = await fetch(`/api/enrollments/user/${user.id}`);
+                const enrollments = await res.json();
+                const grid = document.getElementById('enrolledGrid');
+                const empty = document.getElementById('emptyState');
+
+                if (enrollments.length === 0) {
+                    empty.style.display = 'block';
+                    grid.style.display = 'none';
+                    return;
+                }
+
+                grid.innerHTML = '';
+                enrollments.forEach(en => {
+                    const course = en.course;
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <img src="${course.thumbnailUri || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'}" alt="${course.title}" class="card-img">
+                        <div class="card-content">
+                            <h3 class="card-title">${course.title}</h3>
+                            <div style="margin: 1.5rem 0;">
+                                <div style="height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
+                                    <div style="width: 45%; height: 100%; background: var(--primary);"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600;">
+                                    <span>Progress</span>
+                                    <span>45%</span>
+                                </div>
+                            </div>
+                            <a href="course-view.html?id=${course.id}" class="btn btn-primary" style="width: 100%;">Continue Learning</a>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        window.onload = loadEnrolled;
+    </script>
+</body>
+</html>

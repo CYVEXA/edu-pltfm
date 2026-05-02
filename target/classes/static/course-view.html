@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Center | CYVEXA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body style="background: #0f172a; color: white;">
+    <header style="background: #1e293b; border-bottom: 1px solid #334155;">
+        <a href="index.html" class="logo-container">
+            <span class="logo-title" style="color: #60a5fa;">CYVEXA</span>
+            <span class="logo-subtitle" style="color: #94a3b8;">Professional Learning</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <a href="dashboard.html" class="btn btn-outline" style="color: white; border-color: #334155; background: #334155;">Back to Dashboard</a>
+            <button onclick="logout()" class="btn btn-primary" style="background: #ef4444; border: none;">Sign Out</button>
+        </div>
+    </header>
+
+    <main style="display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 80px);">
+        <div style="padding: 3rem; overflow-y: auto; background: radial-gradient(circle at top left, #1e293b, #0f172a);">
+            <div class="video-container" style="border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                <video id="mainVideo" controls controlsList="nodownload" style="width: 100%; aspect-ratio: 16/9; border-radius: 12px;">
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <div style="margin-top: 3rem;">
+                <h1 id="courseTitle" style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Course Intro</h1>
+                <p id="courseDesc" style="color: #94a3b8; font-size: 1.15rem; max-width: 900px; line-height: 1.7;"></p>
+            </div>
+        </div>
+
+        <aside style="background: #1e293b; border-left: 1px solid #334155; padding: 2rem; overflow-y: auto;">
+            <h3 style="margin-bottom: 2rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.75rem; color: #f8fafc;">
+                <i class="fas fa-play-circle" style="color: #60a5fa;"></i> Course Curriculum
+            </h3>
+            <div id="lessonList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Lessons -->
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'login.html';
+
+        async function loadCourseContent() {
+            if (!courseId) return;
+            try {
+                const res = await fetch(`/api/courses/${courseId}`);
+                const course = await res.json();
+                document.getElementById('courseTitle').innerText = course.title;
+                document.getElementById('courseDesc').innerText = course.description;
+
+                const lessonList = document.getElementById('lessonList');
+                lessonList.innerHTML = '';
+
+                if (course.lessons && course.lessons.length > 0) {
+                    course.lessons.forEach((lesson, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'module-item';
+                        div.style.background = index === 0 ? '#334155' : '#0f172a';
+                        div.style.color = 'white';
+                        div.style.border = '1px solid #334155';
+                        div.style.cursor = 'pointer';
+                        div.innerHTML = `
+                            <i class="fas fa-play" style="font-size: 0.8rem; color: ${index === 0 ? '#60a5fa' : '#475569'}; margin-right: 1rem;"></i>
+                            <span style="font-weight: 500;">Lesson ${index + 1}: ${lesson.title}</span>
+                        `;
+                        div.onclick = () => playVideo(lesson.videoPath, div);
+                        lessonList.appendChild(div);
+                        if (index === 0) playVideo(lesson.videoPath, div);
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function playVideo(url, element) {
+            const video = document.getElementById('mainVideo');
+            video.src = url;
+            video.play();
+            document.querySelectorAll('.module-item').forEach(el => {
+                el.style.background = '#0f172a';
+                el.querySelector('i').style.color = '#475569';
+            });
+            element.style.background = '#334155';
+            element.querySelector('i').style.color = '#60a5fa';
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        window.onload = loadCourseContent;
+    </script>
+</body>
+</html>

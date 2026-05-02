@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | CYVEXA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="logo-container">
+            <span class="logo-title">CYVEXA</span>
+            <span class="logo-subtitle">Professional Learning</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <span style="font-weight: 600; color: var(--primary);">ADMIN PORTAL</span>
+            <button onclick="logout()" class="btn btn-outline">Sign Out</button>
+        </div>
+    </header>
+
+    <div class="admin-grid" style="display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 80px);">
+        <aside style="background: white; border-right: 1px solid var(--border); padding: 2rem;">
+            <nav style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a href="#" class="btn btn-primary" style="justify-content: flex-start; gap: 0.75rem;">
+                    <i class="fas fa-plus-circle"></i> Post New Course
+                </a>
+                <a href="index.html" class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem; border: none;">
+                    <i class="fas fa-eye"></i> View Live Site
+                </a>
+            </nav>
+        </aside>
+
+        <main class="container" style="padding: 3rem;">
+            <div class="section-card">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem; color: var(--text-main);">Create Professional Course</h1>
+                
+                <form id="postCourseForm">
+                    <div class="form-group">
+                        <label class="form-label">Course Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="e.g. Master React.js Professional 2026" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Course Description</label>
+                        <textarea id="description" class="form-control" rows="4" placeholder="Describe the course goals and target audience..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">What You Will Learn & Outcomes</label>
+                        <textarea id="outcomes" class="form-control" rows="4" placeholder="List the skills students will gain..." required></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-image"></i> Thumbnail Image</label>
+                            <input type="file" id="thumbnailFile" class="form-control" accept="image/*" required>
+                            <small style="color: var(--secondary); margin-top: 0.5rem; display: block;">Recommended size: 1280x720px</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-video"></i> Introduction Video</label>
+                            <input type="file" id="videoFile" class="form-control" accept="video/*" required>
+                            <small style="color: var(--secondary); margin-top: 0.5rem; display: block;">MP4 format recommended</small>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="min-width: 280px;">
+                            <i class="fas fa-rocket" style="margin-right: 0.75rem;"></i> Publish Course
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') window.location.href = 'login.html';
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/api/uploads/single', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Upload failed');
+            return await response.text();
+        }
+
+        document.getElementById('postCourseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading Assets...';
+
+            try {
+                const thumbnailUrl = await uploadFile(document.getElementById('thumbnailFile').files[0]);
+                const videoUrl = await uploadFile(document.getElementById('videoFile').files[0]);
+
+                const courseData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    whatYouWillLearn: document.getElementById('outcomes').value,
+                    outcomes: document.getElementById('outcomes').value,
+                    thumbnailUri: thumbnailUrl,
+                    lessons: [{ title: 'Introduction', videoPath: videoUrl }]
+                };
+
+                const res = await fetch('/api/courses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(courseData)
+                });
+
+                if (res.ok) {
+                    alert('Course published successfully!');
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error publishing course. Check file sizes.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rocket"></i> Publish Course';
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
