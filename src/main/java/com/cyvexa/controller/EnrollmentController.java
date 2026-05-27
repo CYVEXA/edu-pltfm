@@ -2,9 +2,13 @@ package com.cyvexa.controller;
 
 import com.cyvexa.model.Course;
 import com.cyvexa.model.Enrollment;
+import com.cyvexa.model.Lesson;
+import com.cyvexa.model.LessonProgress;
 import com.cyvexa.model.User;
 import com.cyvexa.repository.CourseRepository;
 import com.cyvexa.repository.EnrollmentRepository;
+import com.cyvexa.repository.LessonProgressRepository;
+import com.cyvexa.repository.LessonRepository;
 import com.cyvexa.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +32,14 @@ public class EnrollmentController {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private LessonRepository lessonRepository;
+
+    @Autowired
+    private LessonProgressRepository lessonProgressRepository;
+
     @PostMapping
-    public ResponseEntity<?> enroll(@RequestBody Map<String, Long> payload) {
-        Long userId = payload.get("userId");
-        Long courseId = payload.get("courseId");
+    public ResponseEntity<?> enroll(@RequestParam Long userId, @RequestParam Long courseId) {
 
         User user = userRepository.findById(userId).orElse(null);
         Course course = courseRepository.findById(courseId).orElse(null);
@@ -66,5 +74,60 @@ public class EnrollmentController {
         Course course = courseRepository.findById(courseId).orElse(null);
         if (user == null || course == null) return ResponseEntity.ok(false);
         return ResponseEntity.ok(enrollmentRepository.existsByUserAndCourse(user, course));
+    }
+
+    @GetMapping("/course/{courseId}/stats")
+    public ResponseEntity<?> getCourseStats(@PathVariable Long courseId) {
+        Course course = courseRepository.findById(courseId).orElse(null);
+        if (course == null) return ResponseEntity.notFound().build();
+        long enrolled = enrollmentRepository.countByCourse(course);
+        long completed = enrollmentRepository.countByCourseAndProgress(course, 100);
+        return ResponseEntity.ok(Map.of("enrolledCount", enrolled, "completedCount", completed));
+    }
+
+    @GetMapping("/{enrollmentId}/progress")
+    public ResponseEntity<?> getLessonProgress(@PathVariable Long enrollmentId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElse(null);
+        if (enrollment == null) return ResponseEntity.notFound().build();
+
+        List<LessonProgress> progress = lessonProgressRepository.findByEnrollment(enrollment);
+        long totalLessons = lessonRepository.findByCourse(enrollment.getCourse()).size();
+        long completedLessons = lessonProgressRepository.countByEnrollmentAndCompletedTrue(enrollment);
+
+        return ResponseEntity.ok(Map.of(
+            "progress", progress,
+            "completedLessons", completedLessons,
+            "totalLessons", totalLessons
+        ));
+    }
+
+    @PostMapping("/{enrollmentId}/lessons/{lessonId}/complete")
+    public ResponseEntity<?> markLessonComplete(@PathVariable Long enrollmentId, @PathVariable Long lessonId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElse(null);
+        Lesson lesson = lessonRepository.findById(lessonId).orElse(null);
+
+        if (enrollment == null || lesson == null) {
+            return ResponseEntity.badRequest().body("Enrollment or Lesson not found");
+        }
+
+        LessonProgress lp = lessonProgressRepository.findByEnrollmentAndLesson(enrollment, lesson)
+            .orElse(new LessonProgress());
+
+        if (!lp.isCompleted()) {
+            lp.setEnrollment(enrollment);
+            lp.setLesson(lesson);
+            lp.setCompleted(true);
+            lp.setCompletedAt(LocalDateTime.now());
+            lessonProgressRepository.save(lp);
+
+            // Recalculate overall progress
+            long totalLessons = lessonRepository.findByCourse(enrollment.getCourse()).size();
+            long completedLessons = lessonProgressRepository.countByEnrollmentAndCompletedTrue(enrollment);
+            int newProgress = totalLessons > 0 ? (int) ((completedLessons * 100) / totalLessons) : 0;
+            enrollment.setProgress(newProgress);
+            enrollmentRepository.save(enrollment);
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Lesson marked complete", "progress", enrollment.getProgress()));
     }
 }

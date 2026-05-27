@@ -19,6 +19,9 @@ public class Course {
     @Column(nullable = false)
     private String title;
 
+    @Column
+    private String authorName;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -35,6 +38,10 @@ public class Course {
     private String type = "Free";
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Lesson> lessons;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Enrollment> enrollments;
 }

@@ -47,4 +47,35 @@ public class CourseController {
                 .map(course -> lessonRepository.findByCourse(course))
                 .orElse(List.of());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course updatedCourse) {
+        return courseRepository.findById(id).map(existingCourse -> {
+            existingCourse.setTitle(updatedCourse.getTitle());
+            existingCourse.setAuthorName(updatedCourse.getAuthorName());
+            existingCourse.setDescription(updatedCourse.getDescription());
+            existingCourse.setWhatYouWillLearn(updatedCourse.getWhatYouWillLearn());
+            existingCourse.setOutcomes(updatedCourse.getOutcomes());
+            if (updatedCourse.getThumbnailUri() != null) {
+                existingCourse.setThumbnailUri(updatedCourse.getThumbnailUri());
+            }
+            
+            existingCourse.getLessons().clear();
+            if (updatedCourse.getLessons() != null) {
+                for (com.cyvexa.model.Lesson lesson : updatedCourse.getLessons()) {
+                    lesson.setCourse(existingCourse);
+                    existingCourse.getLessons().add(lesson);
+                }
+            }
+            return ResponseEntity.ok(courseRepository.save(existingCourse));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
+        return courseRepository.findById(id).map(course -> {
+            courseRepository.delete(course);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
