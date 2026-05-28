@@ -27,4 +27,7 @@ public class LessonProgress {
     private boolean completed = false;
 
     private LocalDateTime completedAt;
+
+    @Column(name = "progress_percent")
+    private Integer progressPercent = 0;
 }

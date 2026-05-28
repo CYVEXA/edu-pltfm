@@ -44,4 +44,16 @@ public class Course {
     @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Enrollment> enrollments;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("enrollmentCount")
+    public int getEnrollmentCount() {
+        return enrollments != null ? enrollments.size() : 0;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("trendingScore")
+    public int getTrendingScore() {
+        int enrollCount = enrollments != null ? enrollments.size() : 0;
+        int lessonCount = lessons != null ? lessons.size() : 0;
+        return enrollCount * 3 + lessonCount;
+    }
 }

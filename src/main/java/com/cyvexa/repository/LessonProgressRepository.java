@@ -13,4 +13,7 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
     Optional<LessonProgress> findByEnrollmentAndLesson(Enrollment enrollment, Lesson lesson);
     long countByEnrollmentAndCompletedTrue(Enrollment enrollment);
     long countByEnrollment(Enrollment enrollment);
+    List<LessonProgress> findByLesson(com.cyvexa.model.Lesson lesson);
+    void deleteByLesson(com.cyvexa.model.Lesson lesson);
+    void deleteByEnrollment(com.cyvexa.model.Enrollment enrollment);
 }

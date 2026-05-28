@@ -19,6 +19,9 @@ public class CourseController {
     @Autowired
     private com.cyvexa.repository.LessonRepository lessonRepository;
 
+    @Autowired
+    private com.cyvexa.repository.LessonProgressRepository lessonProgressRepository;
+
     @GetMapping
     public List<Course> getAllCourses() {
         return courseRepository.findAll();
@@ -49,6 +52,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course updatedCourse) {
         return courseRepository.findById(id).map(existingCourse -> {
             existingCourse.setTitle(updatedCourse.getTitle());
@@ -59,14 +63,49 @@ public class CourseController {
             if (updatedCourse.getThumbnailUri() != null) {
                 existingCourse.setThumbnailUri(updatedCourse.getThumbnailUri());
             }
-            
-            existingCourse.getLessons().clear();
-            if (updatedCourse.getLessons() != null) {
-                for (com.cyvexa.model.Lesson lesson : updatedCourse.getLessons()) {
-                    lesson.setCourse(existingCourse);
-                    existingCourse.getLessons().add(lesson);
+
+            // In-place merging of lessons to preserve existing IDs and avoid foreign key constraint violations
+            java.util.List<com.cyvexa.model.Lesson> updatedLessons = updatedCourse.getLessons();
+            java.util.List<com.cyvexa.model.Lesson> existingLessons = existingCourse.getLessons();
+
+            java.util.Set<Long> retainedLessonIds = new java.util.HashSet<>();
+            java.util.List<com.cyvexa.model.Lesson> lessonsToKeep = new java.util.ArrayList<>();
+
+            if (updatedLessons != null) {
+                for (com.cyvexa.model.Lesson updatedL : updatedLessons) {
+                    if (updatedL.getId() != null) {
+                        // Lesson already exists: update properties in-place
+                        for (com.cyvexa.model.Lesson existingL : existingLessons) {
+                            if (existingL.getId().equals(updatedL.getId())) {
+                                existingL.setTitle(updatedL.getTitle());
+                                if (updatedL.getVideoPath() != null && !updatedL.getVideoPath().isEmpty()) {
+                                    existingL.setVideoPath(updatedL.getVideoPath());
+                                }
+                                existingL.setDuration(updatedL.getDuration());
+                                lessonsToKeep.add(existingL);
+                                retainedLessonIds.add(existingL.getId());
+                                break;
+                            }
+                        }
+                    } else {
+                        // New lesson: link to course
+                        updatedL.setCourse(existingCourse);
+                        lessonsToKeep.add(updatedL);
+                    }
                 }
             }
+
+            // Remove/delete orphaned lessons and their associated progress records
+            for (com.cyvexa.model.Lesson existingL : new java.util.ArrayList<>(existingLessons)) {
+                if (!retainedLessonIds.contains(existingL.getId())) {
+                    lessonProgressRepository.deleteByLesson(existingL);
+                    lessonRepository.delete(existingL);
+                }
+            }
+
+            existingLessons.clear();
+            existingLessons.addAll(lessonsToKeep);
+
             return ResponseEntity.ok(courseRepository.save(existingCourse));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -74,6 +113,9 @@ public class CourseController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
         return courseRepository.findById(id).map(course -> {
+            for (com.cyvexa.model.Lesson lesson : course.getLessons()) {
+                lessonProgressRepository.deleteByLesson(lesson);
+            }
             courseRepository.delete(course);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());

@@ -10,10 +10,10 @@
 <body>
     <header>
         <a href="index.html" class="logo-container" style="flex-direction: row; align-items: center; gap: 0.75rem;">
-            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 48px; width: auto; flex-shrink: 0; transform: scale(1.4);">
+            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 38px; width: auto; flex-shrink: 0; transform: scale(1.5);">
             <div style="display: flex; flex-direction: column;">
-                <span class="logo-title">CYVEXA</span>
-                <span class="logo-subtitle">Professional Learning</span>
+                <span class="logo-title" style="font-size: 1.6rem;">CYVEXA</span>
+                <span class="logo-subtitle" style="font-size: 0.7rem; margin-top: 1px;">Professional Learning</span>
             </div>
         </a>
         <div style="display: flex; align-items: center; gap: 1.5rem;">
@@ -153,6 +153,16 @@
                     currentCourse.lessons.forEach((lesson, index) => {
                         const div = document.createElement('div');
                         div.className = 'module-item';
+                        div.style.cursor = 'pointer';
+                        div.onclick = () => {
+                            const user = JSON.parse(localStorage.getItem('user'));
+                            if (!user) {
+                                localStorage.setItem('redirectAfterLogin', window.location.origin + '/course-view.html?id=' + courseId);
+                                window.location.href = 'login.html';
+                            } else {
+                                window.location.href = `course-view.html?id=${courseId}`;
+                            }
+                        };
                         div.innerHTML = `
                             <i class="fas fa-play-circle" style="color: var(--primary); font-size: 1.2rem; margin-right: 1rem;"></i>
                             <span style="font-weight: 600;">Module ${index + 1}: ${lesson.title}</span>

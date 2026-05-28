@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+*.log
+node_modules/
+uploads/
+.env
+.DS_Store
+Thumbs.db

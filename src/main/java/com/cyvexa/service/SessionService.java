@@ -28,4 +28,8 @@ public class SessionService {
     public void removeSession(String token) {
         sessions.remove(token);
     }
+
+    public void clearAllSessions() {
+        sessions.clear();
+    }
 }

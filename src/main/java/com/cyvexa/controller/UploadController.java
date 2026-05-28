@@ -2,6 +2,9 @@ package com.cyvexa.controller;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.support.ResourceRegion;
+import org.springframework.http.HttpRange;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +74,7 @@ public class UploadController {
     }
 
     @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
+    public ResponseEntity<?> downloadFile(@PathVariable String fileName, @RequestHeader HttpHeaders headers) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
@@ -81,6 +84,14 @@ public class UploadController {
                 if (contentType == null) {
                     contentType = "application/octet-stream";
                 }
+
+                if (contentType.startsWith("video/")) {
+                    ResourceRegion region = resourceRegion(resource, headers);
+                    return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .body(region);
+                }
+
                 return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(contentType))
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
@@ -90,6 +101,21 @@ public class UploadController {
             }
         } catch (Exception ex) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    private ResourceRegion resourceRegion(Resource resource, HttpHeaders headers) throws IOException {
+        long contentLength = resource.contentLength();
+        List<HttpRange> ranges = headers.getRange();
+        if (!ranges.isEmpty()) {
+            HttpRange range = ranges.get(0);
+            long start = range.getRangeStart(contentLength);
+            long end = range.getRangeEnd(contentLength);
+            long rangeLength = Math.min(1024 * 1024L, end - start + 1); // 1MB chunks
+            return new ResourceRegion(resource, start, rangeLength);
+        } else {
+            long rangeLength = Math.min(1024 * 1024L, contentLength); // 1MB chunks
+            return new ResourceRegion(resource, 0, rangeLength);
         }
     }
 }

@@ -10,10 +10,10 @@
 <body>
     <header>
         <a href="index.html" class="logo-container" style="flex-direction: row; align-items: center; gap: 0.75rem;">
-            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 48px; width: auto; flex-shrink: 0; transform: scale(1.4);">
+            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 38px; width: auto; flex-shrink: 0; transform: scale(1.5);">
             <div style="display: flex; flex-direction: column;">
-                <span class="logo-title">CYVEXA</span>
-                <span class="logo-subtitle">Professional Learning</span>
+                <span class="logo-title" style="font-size: 1.6rem;">CYVEXA</span>
+                <span class="logo-subtitle" style="font-size: 0.7rem; margin-top: 1px;">Professional Learning</span>
             </div>
         </a>
         <div style="display: flex; align-items: center; gap: 1.5rem;">
@@ -31,6 +31,9 @@
                 </button>
                 <button onclick="switchTab('form', true)" id="btn-tab-form" class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem; border: none; width: 100%;">
                     <i class="fas fa-plus-circle"></i> Post New Course
+                </button>
+                <button onclick="switchTab('users')" id="btn-tab-users" class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem; border: none; width: 100%;">
+                    <i class="fas fa-users"></i> User Management
                 </button>
                 <a href="index.html" class="btn btn-outline" style="justify-content: flex-start; gap: 0.75rem; border: none;">
                     <i class="fas fa-eye"></i> View Live Site
@@ -58,45 +61,44 @@
                     <h1 id="formTitle" style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem; color: var(--text-main);">Create Professional Course</h1>
                     
                     <form id="postCourseForm">
-                        <div class="form-group">
-                            <label class="form-label">Course Title</label>
-                            <input type="text" id="title" class="form-control" placeholder="e.g. Master React.js Professional 2026" required>
-                        </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Author Name</label>
-                            <input type="text" id="authorName" class="form-control" placeholder="e.g. Dr. Sarah Jenkins" required>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div class="form-group">
+                                <label class="form-label">Course Title</label>
+                                <input type="text" id="title" class="form-control" placeholder="Enter course title" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Author Name</label>
+                                <input type="text" id="authorName" class="form-control" placeholder="e.g. John Smith">
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Course Description</label>
-                            <textarea id="description" class="form-control" rows="4" placeholder="Describe the course goals and target audience..." required></textarea>
+                            <textarea id="description" class="form-control" placeholder="Describe what the course covers..." rows="3" required></textarea>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">What You Will Learn</label>
-                            <textarea id="whatYouWillLearn" class="form-control" rows="4" placeholder="List the key concepts and skills students will learn..." required></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Course Outcomes</label>
-                            <textarea id="outcomes" class="form-control" rows="4" placeholder="List the career opportunities and certification benefits..." required></textarea>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
                             <div class="form-group">
-                                <label class="form-label"><i class="fas fa-image"></i> Thumbnail Image</label>
-                                <input type="file" id="thumbnailFile" class="form-control" accept="image/*" required>
-                                <small style="color: var(--secondary); margin-top: 0.5rem; display: block;">Recommended size: 1280x720px</small>
-                                <div id="currentThumbnailInfo" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; color: var(--primary); font-weight: 600;"></div>
+                                <label class="form-label">What You Will Learn</label>
+                                <textarea id="whatYouWillLearn" class="form-control" placeholder="Key learning objectives" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Course Outcomes</label>
+                                <textarea id="outcomes" class="form-control" placeholder="Expected outcomes" rows="3"></textarea>
                             </div>
                         </div>
 
-                        <!-- Module upload structure -->
-                        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 0;">Course Modules (Max 10)</h3>
-                                <button type="button" id="addModuleBtn" onclick="addNewModuleRow()" class="btn btn-outline" style="gap: 0.5rem; padding: 0.5rem 1rem;">
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label class="form-label">Course Thumbnail</label>
+                            <input type="file" id="thumbnailFile" class="form-control" accept="image/*">
+                            <div id="currentThumbnailInfo" style="display: none; margin-top: 0.5rem; font-size: 0.9rem; color: var(--primary); font-weight: 600;"></div>
+                        </div>
+
+                        <div style="margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 0;">Course Modules</h3>
+                                <button type="button" id="addModuleBtn" class="btn btn-outline" onclick="addNewModuleRow()" style="padding: 0.5rem 1rem;">
                                     <i class="fas fa-plus"></i> Add Module
                                 </button>
                             </div>
@@ -115,6 +117,16 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div id="userManagementSection" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; font-weight: 800; color: var(--text-main); margin: 0;">User Management</h1>
+                </div>
+                <div id="adminUserList" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Dynamic user items -->
                 </div>
             </div>
         </main>
@@ -165,19 +177,28 @@
         function switchTab(tab, resetForm = false) {
             const manageSec = document.getElementById('manageCoursesSection');
             const formSec = document.getElementById('courseFormSection');
+            const usersSec = document.getElementById('userManagementSection');
             const btnManage = document.getElementById('btn-tab-manage');
             const btnForm = document.getElementById('btn-tab-form');
+            const btnUsers = document.getElementById('btn-tab-users');
+            
+            manageSec.style.display = 'none';
+            formSec.style.display = 'none';
+            usersSec.style.display = 'none';
+            btnManage.className = 'btn btn-outline';
+            btnForm.className = 'btn btn-outline';
+            btnUsers.className = 'btn btn-outline';
             
             if (tab === 'manage') {
                 manageSec.style.display = 'block';
-                formSec.style.display = 'none';
                 btnManage.className = 'btn btn-primary';
-                btnForm.className = 'btn btn-outline';
                 loadManageCourses();
+            } else if (tab === 'users') {
+                usersSec.style.display = 'block';
+                btnUsers.className = 'btn btn-primary';
+                loadUsers();
             } else {
-                manageSec.style.display = 'none';
                 formSec.style.display = 'block';
-                btnManage.className = 'btn btn-outline';
                 btnForm.className = 'btn btn-primary';
                 
                 if (resetForm) {
@@ -195,7 +216,7 @@
             }
         }
 
-        function addNewModuleRow(existingTitle = '', existingVideoPath = '') {
+        function addNewModuleRow(existingTitle = '', existingVideoPath = '', existingId = null) {
             const container = document.getElementById('modulesContainer');
             const rows = container.getElementsByClassName('module-row');
             if (rows.length >= 10) {
@@ -207,6 +228,9 @@
             const row = document.createElement('div');
             row.className = 'module-row section-card';
             row.style.cssText = 'padding: 1.5rem; margin-bottom: 0; position: relative; border-color: var(--border);';
+            if (existingId) {
+                row.dataset.id = existingId;
+            }
             row.innerHTML = `
                 <div style="position: absolute; right: 1.5rem; top: 1.5rem;">
                     <button type="button" class="btn btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="removeModuleRow(this)">
@@ -331,7 +355,7 @@
 
                 if (course.lessons && course.lessons.length > 0) {
                     course.lessons.forEach(lesson => {
-                        addNewModuleRow(lesson.title, lesson.videoPath);
+                        addNewModuleRow(lesson.title, lesson.videoPath, lesson.id);
                     });
                 } else {
                     addNewModuleRow();
@@ -373,6 +397,89 @@
             };
         }
 
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                const list = document.getElementById('adminUserList');
+                list.innerHTML = '';
+
+                if (users.length === 0) {
+                    list.innerHTML = '<div class="text-center" style="padding: 4rem; background: white; border-radius: var(--radius); border: 1px dashed var(--border);"><i class="fas fa-users" style="font-size: 3rem; color: var(--secondary); margin-bottom: 1.5rem;"></i><h3>No users found</h3></div>';
+                    return;
+                }
+
+                users.forEach(u => {
+                    const card = document.createElement('div');
+                    card.className = 'section-card';
+                    card.style.cssText = 'padding: 1.5rem; display: flex; align-items: center; gap: 2rem; margin-bottom: 0;';
+                    card.innerHTML = `
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0;">${u.fullName.charAt(0).toUpperCase()}</div>
+                        <div style="flex: 1;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text-main);">${escapeHtml(u.fullName)}</h3>
+                            <p style="color: var(--secondary); font-size: 0.9rem; margin-bottom: 0;">${escapeHtml(u.email)}</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <select class="form-control" style="width: auto; padding: 0.4rem 1.5rem 0.4rem 0.75rem; font-size: 0.85rem; border-radius: 6px;" onchange="updateUserRole(${u.id}, this.value)">
+                                <option value="STUDENT" ${u.role === 'STUDENT' ? 'selected' : ''}>Student</option>
+                                <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
+                                <option value="MENTOR" ${u.role === 'MENTOR' ? 'selected' : ''}>Mentor</option>
+                            </select>
+                            <button class="btn btn-outline" style="padding: 0.5rem 1rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.2);" onclick="deleteUser(${u.id})">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById('adminUserList').innerHTML = '<div class="text-center" style="padding: 2rem; color: var(--secondary);">Error loading users.</div>';
+            }
+        }
+
+        async function updateUserRole(userId, newRole) {
+            try {
+                const res = await fetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (!res.ok) alert('Failed to update user role.');
+            } catch (err) {
+                console.error(err);
+                alert('Error updating user role.');
+            }
+        }
+
+        async function deleteUser(id) {
+            const confirmDel = document.createElement('div');
+            confirmDel.style.cssText = 'position:fixed; top:20px; right:20px; background:white; padding:1.5rem; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid var(--border); z-index:9999; display:flex; flex-direction:column; gap:1rem;';
+            confirmDel.innerHTML = `
+                <div style="font-weight:600;">Delete this user? Their enrollments and progress will also be removed.</div>
+                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <button class="btn btn-outline" style="padding:0.4rem 1rem;" id="cancelUserDelBtn">Cancel</button>
+                    <button class="btn btn-primary" style="padding:0.4rem 1rem; background:#ef4444; border:none;" id="confirmUserDelBtn">Delete</button>
+                </div>
+            `;
+            document.body.appendChild(confirmDel);
+            
+            document.getElementById('cancelUserDelBtn').onclick = () => confirmDel.remove();
+            document.getElementById('confirmUserDelBtn').onclick = async () => {
+                confirmDel.remove();
+                try {
+                    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        loadUsers();
+                    } else {
+                        alert('Failed to delete user.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+        }
+
         document.getElementById('postCourseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -395,6 +502,7 @@
 
                 for (let i = 0; i < moduleRows.length; i++) {
                     const row = moduleRows[i];
+                    const id = row.dataset.id ? parseInt(row.dataset.id) : null;
                     const title = row.querySelector('.module-title-input').value;
                     const videoInput = row.querySelector('.module-video-input');
                     let videoPath = '';
@@ -406,7 +514,7 @@
                         videoPath = row.querySelector('.current-video-info').dataset.path;
                     }
 
-                    lessons.push({ title, videoPath });
+                    lessons.push({ id, title, videoPath });
                 }
 
                 const courseData = {

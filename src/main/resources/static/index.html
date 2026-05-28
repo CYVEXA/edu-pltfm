@@ -10,10 +10,10 @@
 <body>
     <header>
         <a href="index.html" class="logo-container" style="flex-direction: row; align-items: center; gap: 0.75rem;">
-            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 48px; width: auto; flex-shrink: 0; transform: scale(1.4);">
+            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 38px; width: auto; flex-shrink: 0; transform: scale(1.5);">
             <div style="display: flex; flex-direction: column;">
-                <span class="logo-title">CYVEXA</span>
-                <span class="logo-subtitle">Professional Learning</span>
+                <span class="logo-title" style="font-size: 1.6rem;">CYVEXA</span>
+                <span class="logo-subtitle" style="font-size: 0.7rem; margin-top: 1px;">Professional Learning</span>
             </div>
         </a>
 
@@ -48,8 +48,14 @@
                     <h2 style="font-size: 2rem; font-weight: 800;">Featured Courses</h2>
                     <p style="color: var(--secondary);">Hand-picked professional courses for you</p>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-outline" style="padding: 0.5rem 1rem;"><i class="fas fa-filter"></i> Filter</button>
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted);"><i class="fas fa-filter" style="color: var(--primary);"></i> Sort By:</span>
+                    <select id="courseSortSelect" class="form-control" style="width: auto; padding: 0.4rem 2rem 0.4rem 1rem; font-size: 0.9rem; border-radius: 8px; cursor: pointer; background: white; font-weight: 600; border-color: var(--border);">
+                        <option value="default">Default</option>
+                        <option value="alphabetical">A-Z Alphabetical</option>
+                        <option value="highest-enrolled">Highest Enrolled</option>
+                        <option value="trending">Trending / Popular</option>
+                    </select>
                 </div>
             </div>
 
@@ -63,7 +69,7 @@
         <div class="container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4rem;">
             <div>
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 40px; width: auto; flex-shrink: 0; transform: scale(1.35);">
+                            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 40px; width: auto; flex-shrink: 0; transform: scale(1.5);">
                     <span class="logo-title">CYVEXA</span>
                 </div>
                 <p style="color: var(--secondary);">Empowering professionals worldwide through accessible, high-quality education.</p>
@@ -83,46 +89,102 @@
     </footer>
 
     <script>
+        let allCourses = [];
+
         async function loadCourses() {
             try {
                 const response = await fetch('/api/courses');
-                const courses = await response.json();
-                const grid = document.getElementById('courseGrid');
-                grid.innerHTML = '';
-
-                courses.forEach(course => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <img src="${course.thumbnailUri || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'}" alt="${course.title}" class="card-img">
-                        <div class="card-content">
-                            <h3 class="card-title">${course.title}</h3>
-                            <p style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem;"><i class="fas fa-user-tie"></i> By ${course.authorName || 'Professional Instructor'}</p>
-                            <p class="card-desc">${course.description.substring(0, 100)}...</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-                                <span style="font-weight: 700; color: var(--primary); font-size: 1.2rem;">Free</span>
-                                <a href="course-details.html?id=${course.id}" class="btn btn-outline" style="border-radius: 8px;">View Details</a>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
+                allCourses = await response.json();
+                renderCourses(allCourses);
             } catch (err) {
                 console.error(err);
             }
         }
 
-        function checkAuth() {
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user) {
-                document.getElementById('authLinks').innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 1.5rem;">
-                        <span style="font-weight: 600;">Hi, ${user.fullName.split(' ')[0]}</span>
-                        <a href="${user.role === 'ADMIN' ? 'admin.html' : 'dashboard.html'}" class="btn btn-outline">Dashboard</a>
-                        <button onclick="logout()" class="btn btn-primary" style="padding: 0.6rem 1.2rem;">Logout</button>
+        function renderCourses(courses) {
+            const grid = document.getElementById('courseGrid');
+            grid.innerHTML = '';
+
+            courses.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cursor = 'pointer';
+                card.onclick = (e) => {
+                    // Navigate to course details on entire card click
+                    if (e.target.tagName !== 'A' && !e.target.closest('a')) {
+                        window.location.href = `course-details.html?id=${course.id}`;
+                    }
+                };
+                card.innerHTML = `
+                    <img src="${course.thumbnailUri || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'}" alt="${course.title}" class="card-img">
+                    <div class="card-content">
+                        <h3 class="card-title">${course.title}</h3>
+                        <p style="font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem;"><i class="fas fa-user-tie"></i> By ${course.authorName || 'Professional Instructor'}</p>
+                        <p class="card-desc">${course.description.substring(0, 100)}...</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                            <span style="font-weight: 700; color: var(--primary); font-size: 1.2rem;">Free</span>
+                            <a href="course-details.html?id=${course.id}" class="btn btn-outline" style="border-radius: 8px;">View Details</a>
+                        </div>
                     </div>
                 `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Dropdown Sort filtering
+        document.getElementById('courseSortSelect').addEventListener('change', (e) => {
+            const sortBy = e.target.value;
+            let sorted = [...allCourses];
+
+            if (sortBy === 'alphabetical') {
+                sorted.sort((a, b) => a.title.localeCompare(b.title));
+            } else if (sortBy === 'highest-enrolled') {
+                sorted.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
+            } else if (sortBy === 'trending') {
+                sorted.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
             }
+
+            // Sync with current search filter
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            if (term) {
+                sorted = sorted.filter(c => c.title.toLowerCase().includes(term));
+            }
+            renderCourses(sorted);
+        });
+
+        async function checkAuth() {
+            const token = localStorage.getItem('sessionToken');
+            const userData = localStorage.getItem('user');
+            if (token && userData) {
+                try {
+                    const res = await fetch('/api/auth/validate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const user = data.user || JSON.parse(userData);
+                        localStorage.setItem('user', JSON.stringify(user));
+                        document.getElementById('authLinks').innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                                <span style="font-weight: 600;">Hi, ${user.fullName.split(' ')[0]}</span>
+                                <a href="${user.role === 'ADMIN' ? 'admin.html' : 'dashboard.html'}" class="btn btn-outline">Dashboard</a>
+                                <button onclick="logout()" class="btn btn-primary" style="padding: 0.6rem 1.2rem;">Logout</button>
+                            </div>
+                        `;
+                        return;
+                    }
+                } catch(e) {}
+                localStorage.removeItem('user');
+                localStorage.removeItem('sessionToken');
+            }
+            document.getElementById('authLinks').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <a href="login.html" class="btn btn-primary">Sign In</a>
+                    <a href="register.html" class="btn btn-outline" style="border: none; padding: 0.6rem 1.2rem;">Create Account</a>
+                </div>
+            `;
         }
 
         function toggleMobileMenu() {
@@ -146,10 +208,21 @@
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.card').forEach(card => {
-                const title = card.querySelector('.card-title').innerText.toLowerCase();
-                card.style.display = title.includes(term) ? 'flex' : 'none';
-            });
+            const sortBy = document.getElementById('courseSortSelect').value;
+            let filtered = [...allCourses];
+
+            if (sortBy === 'alphabetical') {
+                filtered.sort((a, b) => a.title.localeCompare(b.title));
+            } else if (sortBy === 'highest-enrolled') {
+                filtered.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
+            } else if (sortBy === 'trending') {
+                filtered.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
+            }
+
+            if (term) {
+                filtered = filtered.filter(c => c.title.toLowerCase().includes(term));
+            }
+            renderCourses(filtered);
         });
 
         window.onload = () => {

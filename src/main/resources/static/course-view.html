@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body style="background: #0f172a; color: white;">
-    <header style="background: #1e293b; border-bottom: 1px solid #334155;">
+    <header style="background: #1e293b; border-bottom: 1px solid #334155; padding: 0 5%; height: 54px;">
         <a href="index.html" class="logo-container" style="flex-direction: row; align-items: center; gap: 0.75rem;">
-            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 48px; width: auto; flex-shrink: 0; transform: scale(1.4);">
+            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 38px; width: auto; flex-shrink: 0; transform: scale(1.5);">
             <div style="display: flex; flex-direction: column;">
-                <span class="logo-title" style="color: #60a5fa;">CYVEXA</span>
-                <span class="logo-subtitle" style="color: #94a3b8;">Professional Learning</span>
+                <span class="logo-title" style="color: #60a5fa; font-size: 1.6rem;">CYVEXA</span>
+                <span class="logo-subtitle" style="color: #94a3b8; font-size: 0.7rem; margin-top: 1px;">Professional Learning</span>
             </div>
         </a>
         <div style="display: flex; align-items: center; gap: 1.5rem;">
@@ -22,8 +22,13 @@
         </div>
     </header>
 
-    <main style="display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 80px);">
+    <main style="display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 54px);">
         <div style="padding: 3rem; overflow-y: auto; background: radial-gradient(circle at top left, #1e293b, #0f172a);">
+            <div style="margin-bottom: 2rem;">
+                <h1 id="courseTitle" style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; color: #f8fafc;">Course Intro</h1>
+                <p id="activeLessonTitle" style="color: #60a5fa; font-size: 1.2rem; font-weight: 600; margin-top: 0.5rem;"></p>
+            </div>
+
             <div class="video-container" style="border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
                 <video id="mainVideo" controls controlsList="nodownload" style="width: 100%; aspect-ratio: 16/9; border-radius: 12px;">
                     <source src="" type="video/mp4">
@@ -31,8 +36,7 @@
                 </video>
             </div>
             
-            <div style="margin-top: 3rem;">
-                <h1 id="courseTitle" style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Course Intro</h1>
+            <div style="margin-top: 2rem;">
                 <p id="courseDesc" style="color: #94a3b8; font-size: 1.15rem; max-width: 900px; line-height: 1.7;"></p>
             </div>
         </div>
@@ -85,6 +89,10 @@
         let currentCourse = null;
         let currentEnrollmentId = null;
         let currentLessonIndex = 0;
+        let lessonProgressMap = {}; // lessonId -> percentage
+        let lessonCompletedMap = {}; // lessonId -> completed boolean
+        let reportedMilestones = new Set();
+        let activeLessonId = null;
 
         async function getOrCreateEnrollment() {
             try {
@@ -125,7 +133,6 @@
 
                 if (currentCourse.lessons && currentCourse.lessons.length > 0) {
                     // Load existing progress
-                    var completedLessons = [];
                     if (currentEnrollmentId) {
                         try {
                             const progRes = await fetch(`/api/enrollments/${currentEnrollmentId}/progress`, {
@@ -135,61 +142,126 @@
                                 const progData = await progRes.json();
                                 if (progData.progress) {
                                     progData.progress.forEach(function(p) {
-                                        if (p.completed) completedLessons.push(p.lesson.id);
+                                        lessonProgressMap[p.lesson.id] = p.progressPercent;
+                                        lessonCompletedMap[p.lesson.id] = p.completed;
                                     });
                                 }
-                                updateProgressBar(progData.completedLessons, progData.totalLessons);
                             }
                         } catch (e) { console.error(e); }
                     }
 
-                    currentCourse.lessons.forEach(function(lesson, index) {
-                        var div = document.createElement('div');
-                        div.className = 'module-item';
-                        div.setAttribute('data-lesson-id', lesson.id);
-                        div.style.background = index === 0 ? '#334155' : '#0f172a';
-                        div.style.color = 'white';
-                        div.style.border = '1px solid #334155';
-                        div.style.cursor = 'pointer';
-                        var isCompleted = completedLessons.indexOf(lesson.id) !== -1;
-                        div.innerHTML = `
-                            <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-play'}" style="font-size: 0.8rem; color: ${isCompleted ? '#22c55e' : (index === 0 ? '#60a5fa' : '#475569')}; margin-right: 1rem;"></i>
-                            <span style="font-weight: 500; flex:1;">Module ${index + 1}: ${lesson.title}</span>
-                            ${isCompleted ? '<span style="color:#22c55e; font-size:0.75rem;"><i class="fas fa-check"></i> Completed</span>' : ''}
-                        `;
-                        div.onclick = function() { playVideo(lesson.videoPath, div, lesson.id, index); };
-                        lessonList.appendChild(div);
-                        if (index === 0) {
-                            currentLessonIndex = 0;
-                            playVideo(lesson.videoPath, div, lesson.id, 0);
-                        }
-                    });
+                    // Render lessons
+                    renderLessonList();
+
+                    // Play first lesson by default
+                    const firstLesson = currentCourse.lessons[0];
+                    const firstEl = lessonList.firstChild;
+                    currentLessonIndex = 0;
+                    playVideo(firstLesson.videoPath, firstEl, firstLesson.id, 0);
                 }
             } catch (err) { console.error(err); }
         }
 
+        function renderLessonList() {
+            const lessonList = document.getElementById('lessonList');
+            lessonList.innerHTML = '';
+
+            let totalLessons = currentCourse.lessons.length;
+            let totalProgressSum = 0;
+
+            currentCourse.lessons.forEach(function(lesson, index) {
+                var div = document.createElement('div');
+                div.className = 'module-item';
+                div.setAttribute('data-lesson-id', lesson.id);
+                div.style.background = index === currentLessonIndex ? '#334155' : '#0f172a';
+                div.style.color = 'white';
+                div.style.border = '1px solid #334155';
+                div.style.cursor = 'pointer';
+                div.style.padding = '1.2rem';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.borderRadius = '8px';
+
+                var isCompleted = lessonCompletedMap[lesson.id] || false;
+                var progressPercent = lessonProgressMap[lesson.id] || 0;
+                totalProgressSum += isCompleted ? 100 : progressPercent;
+
+                var progressBadge = '';
+                if (isCompleted) {
+                    progressBadge = '<span style="color:#22c55e; font-size:0.75rem; font-weight:600;"><i class="fas fa-check"></i> Completed</span>';
+                } else if (progressPercent > 0) {
+                    progressBadge = `<span class="lesson-badge-${lesson.id}" style="color:#60a5fa; font-size:0.75rem; font-weight:600;"><i class="fas fa-spinner fa-spin"></i> ${progressPercent}% Watched</span>`;
+                }
+
+                div.innerHTML = `
+                    <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-play'}" style="font-size: 0.8rem; color: ${isCompleted ? '#22c55e' : (index === currentLessonIndex ? '#60a5fa' : '#475569')}; margin-right: 1rem;"></i>
+                    <span style="font-weight: 500; flex:1;">Module ${index + 1}: ${lesson.title}</span>
+                    ${progressBadge}
+                `;
+                div.onclick = function() { playVideo(lesson.videoPath, div, lesson.id, index); };
+                lessonList.appendChild(div);
+            });
+
+            // Update overall progress bar
+            let overallProgress = totalLessons > 0 ? Math.round(totalProgressSum / totalLessons) : 0;
+            updateProgressBar(overallProgress);
+        }
+
         function playVideo(url, element, lessonId, index) {
             currentLessonIndex = index;
+            activeLessonId = lessonId;
+            reportedMilestones.clear();
+
+            var activeLesson = currentCourse.lessons[index];
+            document.getElementById('activeLessonTitle').innerText = `Playing: Module ${index + 1} - ${activeLesson.title}`;
+
             var video = document.getElementById('mainVideo');
             video.src = url;
+            
+            // Resume video from saved progress percent
+            var savedPercent = lessonProgressMap[lessonId] || 0;
+            video.onloadedmetadata = function() {
+                if (savedPercent > 0 && savedPercent < 100) {
+                    video.currentTime = (savedPercent / 100) * video.duration;
+                }
+            };
+
             video.play();
-            document.querySelectorAll('.module-item').forEach(function(el) {
-                el.style.background = '#0f172a';
+
+            // Render selected highlight
+            document.querySelectorAll('.module-item').forEach(function(el, idx) {
+                el.style.background = idx === index ? '#334155' : '#0f172a';
                 var icon = el.querySelector('i');
-                if (icon && !icon.classList.contains('fa-check-circle')) {
-                    icon.style.color = '#475569';
+                var idAttr = el.getAttribute('data-lesson-id');
+                var isComp = lessonCompletedMap[idAttr] || false;
+                if (icon && !isComp) {
+                    icon.className = 'fas fa-play';
+                    icon.style.color = idx === index ? '#60a5fa' : '#475569';
                 }
             });
-            element.style.background = '#334155';
-            var icon = element.querySelector('i');
-            if (icon && !icon.classList.contains('fa-check-circle')) {
-                icon.style.color = '#60a5fa';
-            }
 
-            // Remove existing ended listener and add new one
+            // Setup tracking milestones
             video.onended = function() {
                 markLessonComplete(lessonId, element, index);
             };
+        }
+
+        async function saveVideoProgress(lessonId, percent) {
+            if (!currentEnrollmentId || !lessonId) return;
+            try {
+                var res = await fetch(`/api/enrollments/${currentEnrollmentId}/lessons/${lessonId}/progress?percent=${percent}`, {
+                    method: 'POST',
+                    headers: { 'X-Session-Token': localStorage.getItem('sessionToken') }
+                });
+                if (res.ok) {
+                    var data = await res.json();
+                    lessonProgressMap[lessonId] = data.progressPercent;
+                    lessonCompletedMap[lessonId] = data.completed;
+                    
+                    // Re-render curriculum list to display updated percentages
+                    renderLessonList();
+                }
+            } catch (err) { console.error(err); }
         }
 
         async function markLessonComplete(lessonId, element, index) {
@@ -201,22 +273,10 @@
                 });
                 if (res.ok) {
                     var data = await res.json();
-                    // Update UI
-                    element.querySelector('i').className = 'fas fa-check-circle';
-                    element.querySelector('i').style.color = '#22c55e';
-                    var span = document.createElement('span');
-                    span.style.cssText = 'color:#22c55e; font-size:0.75rem;';
-                    span.innerHTML = '<i class="fas fa-check"></i> Completed';
-                    element.appendChild(span);
-
-                    // Update progress bar
-                    var progRes = await fetch(`/api/enrollments/${currentEnrollmentId}/progress`, {
-                        headers: { 'X-Session-Token': localStorage.getItem('sessionToken') }
-                    });
-                    if (progRes.ok) {
-                        var progData = await progRes.json();
-                        updateProgressBar(progData.completedLessons, progData.totalLessons);
-                    }
+                    lessonCompletedMap[lessonId] = true;
+                    lessonProgressMap[lessonId] = 100;
+                    
+                    renderLessonList();
 
                     // Auto-play next lesson
                     if (currentCourse && currentCourse.lessons && index < currentCourse.lessons.length - 1) {
@@ -233,7 +293,7 @@
             } catch (err) { console.error(err); }
         }
 
-        function updateProgressBar(completed, total) {
+        function updateProgressBar(overallProgress) {
             var existing = document.getElementById('courseProgressBar');
             if (!existing) {
                 var container = document.createElement('div');
@@ -251,9 +311,8 @@
                 var sidebar = document.querySelector('aside');
                 if (sidebar) sidebar.insertBefore(container, sidebar.firstChild);
             }
-            var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-            document.getElementById('progressFill').style.width = pct + '%';
-            document.getElementById('progressText').innerText = pct + '%';
+            document.getElementById('progressFill').style.width = overallProgress + '%';
+            document.getElementById('progressText').innerText = overallProgress + '%';
         }
 
         function logout() {
@@ -272,20 +331,23 @@
 
         window.onload = function() {
             loadCourseContent();
-            // Track video time for progress
+            
+            // Real-time video progress tracking
             var video = document.getElementById('mainVideo');
-            var progressTracked = {};
             video.addEventListener('timeupdate', function() {
-                if (!currentCourse) return;
-                var lesson = currentCourse.lessons && currentCourse.lessons[currentLessonIndex];
-                if (!lesson) return;
-                var key = lesson.id;
-                if (!progressTracked[key] && video.currentTime > 0) {
-                    var pct = (video.currentTime / video.duration) * 100;
-                    if (pct >= 50 && !progressTracked[key]) {
-                        progressTracked[key] = true;
+                if (!video.duration || !activeLessonId) return;
+                var isCompleted = lessonCompletedMap[activeLessonId] || false;
+                if (isCompleted) return;
+
+                var pct = (video.currentTime / video.duration) * 100;
+                
+                [25, 50, 75, 95].forEach(function(milestone) {
+                    if (pct >= milestone && !reportedMilestones.has(milestone)) {
+                        reportedMilestones.add(milestone);
+                        // Save progress percentage (milestone 95 is treated as 95% complete)
+                        saveVideoProgress(activeLessonId, milestone);
                     }
-                }
+                });
             });
         };
     </script>

@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up | CYVEXA</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
         <a href="index.html" class="logo-container" style="flex-direction: row; align-items: center; gap: 0.75rem;">
-            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 48px; width: auto; flex-shrink: 0; transform: scale(1.4);">
+            <img src="img/cyvexa-logo.png" alt="CYVEXA" style="height: 38px; width: auto; flex-shrink: 0; transform: scale(1.5);">
             <div style="display: flex; flex-direction: column;">
-                <span class="logo-title">CYVEXA</span>
-                <span class="logo-subtitle">Professional Learning</span>
+                <span class="logo-title" style="font-size: 1.6rem;">CYVEXA</span>
+                <span class="logo-subtitle" style="font-size: 0.7rem; margin-top: 1px;">Professional Learning</span>
             </div>
         </a>
     </header>
@@ -31,11 +32,25 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
-                    <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
+                    <input type="email" id="email" class="form-control" placeholder="Enter the email" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" class="form-control" placeholder="Enter the password" required>
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm the password" required>
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword', this)">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 12px; margin-top: 1rem;">
                     Join CYVEXA
@@ -43,17 +58,35 @@
             </form>
 
             <div class="text-center" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-                <p style="color: var(--secondary);">Already have an account? <a href="login.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign in here</a></p>
+                <p style="color: var(--secondary);">Already have an account? <a href="login.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign In</a></p>
             </div>
         </div>
     </main>
 
     <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'far fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'far fa-eye';
+            }
+        }
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullName = document.getElementById('fullName').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/auth/register', {

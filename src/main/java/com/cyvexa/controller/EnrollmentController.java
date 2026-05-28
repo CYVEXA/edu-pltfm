@@ -130,4 +130,56 @@ public class EnrollmentController {
 
         return ResponseEntity.ok(Map.of("message", "Lesson marked complete", "progress", enrollment.getProgress()));
     }
+
+    @PostMapping("/{enrollmentId}/lessons/{lessonId}/progress")
+    public ResponseEntity<?> updateLessonProgress(
+            @PathVariable Long enrollmentId,
+            @PathVariable Long lessonId,
+            @RequestParam int percent) {
+        
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElse(null);
+        Lesson lesson = lessonRepository.findById(lessonId).orElse(null);
+
+        if (enrollment == null || lesson == null) {
+            return ResponseEntity.badRequest().body("Enrollment or Lesson not found");
+        }
+
+        LessonProgress lp = lessonProgressRepository.findByEnrollmentAndLesson(enrollment, lesson)
+            .orElse(new LessonProgress());
+
+        lp.setEnrollment(enrollment);
+        lp.setLesson(lesson);
+        
+        if (percent > lp.getProgressPercent()) {
+            lp.setProgressPercent(percent);
+        }
+        if (percent >= 100 && !lp.isCompleted()) {
+            lp.setCompleted(true);
+            lp.setCompletedAt(LocalDateTime.now());
+        }
+        lessonProgressRepository.save(lp);
+
+        // Recalculate overall course progress
+        List<Lesson> lessons = lessonRepository.findByCourse(enrollment.getCourse());
+        int totalLessons = lessons.size();
+        if (totalLessons > 0) {
+            int totalProgressSum = 0;
+            for (Lesson l : lessons) {
+                LessonProgress prog = lessonProgressRepository.findByEnrollmentAndLesson(enrollment, l).orElse(null);
+                if (prog != null) {
+                    totalProgressSum += prog.isCompleted() ? 100 : prog.getProgressPercent();
+                }
+            }
+            int newOverallProgress = totalProgressSum / totalLessons;
+            enrollment.setProgress(newOverallProgress);
+            enrollmentRepository.save(enrollment);
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "message", "Progress updated",
+            "progressPercent", lp.getProgressPercent(),
+            "completed", lp.isCompleted(),
+            "courseProgress", enrollment.getProgress()
+        ));
+    }
 }
